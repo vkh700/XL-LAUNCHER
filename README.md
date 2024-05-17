@@ -1,5 +1,5 @@
-# ИГРА МАЙНКРАФТ НЕ ЯВЛЯЕТСЯ МОЕЙ СОБСТВЕННОСТЬЮ! (это не игра но лаунчер) БЛАГОДАРНОСТЬ ВЫДЕЛЯЕТСЯ: Microsoft, Mojang
-# THE GAME MINECRAFT ISNT MINE! (this isnt a game but a launcher) THANKS TO: Microsoft, Mojang
+# ИГРА МАЙНКРАФТ НЕ ЯВЛЯЕТСЯ МОЕЙ СОБСТВЕННОСТЬЮ! (XLLAUNCHER не игра но лаунчер) БЛАГОДАРНОСТЬ ВЫДЕЛЯЕТСЯ: Microsoft, Mojang
+# THE GAME MINECRAFT ISNT MINE! (XLLAUNCHER isnt a game but a launcher) THANKS TO: Microsoft, Mojang
 
 # XL:LAUNCHER
 Лёгкий способ запуска майнкрафта
