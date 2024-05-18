@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow
+from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QTimer
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow, QCheckBox
 from PyQt5.QtGui import QPixmap
 
 from minecraft_launcher_lib.utils import get_minecraft_directory, get_version_list
@@ -12,17 +12,26 @@ from uuid import uuid1
 from subprocess import call
 from sys import argv, exit
 
+import platform
+
 import os
 
-minecraft_directory = get_minecraft_directory().replace('minecraft', 'xllauncher')
+from mojang import Client, API
+
+minecraft_directory = ".xllauncher"
+CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 class LaunchThread(QThread):
-    launch_setup_signal = pyqtSignal(str, str)
+    launch_setup_signal = pyqtSignal(str, str, str, bool)
     progress_update_signal = pyqtSignal(int, int, str)
     state_update_signal = pyqtSignal(bool)
 
     version_id = ''
     username = ''
+    usernameRl = ''
+    password = ''
+    uuid = ''
+    license = False
 
     progress = 0
     progress_max = 0
@@ -32,9 +41,11 @@ class LaunchThread(QThread):
         super().__init__()
         self.launch_setup_signal.connect(self.launch_setup)
 
-    def launch_setup(self, version_id, username):
+    def launch_setup(self, version_id, username, password, license):
         self.version_id = version_id
         self.username = username
+        self.password = password
+        self.license = license
     
     def update_progress_label(self, value):
         self.progress_label = value
@@ -54,6 +65,12 @@ class LaunchThread(QThread):
         f = open("ver.dat", "w")
         f.write(self.version_id)
         f.close()
+        f = open("passwd.dat", "w")
+        f.write(self.password)
+        f.close()
+        f = open("type.dat", "w")
+        f.write(str(self.license))
+        f.close()
 
         self.state_update_signal.emit(True)
 
@@ -62,10 +79,21 @@ class LaunchThread(QThread):
         if self.username == '':
             self.username = generate_username()[0]
         
+        if (self.license==True):
+            client = Client(self.username, self.password)
+            token = client.bearer_token
+            self.usernameRl = client.get_profile().name
+            api = API()
+            self.uuid = api.get_uuid(self.usernameRl)
+        else:
+            token = ""
+            self.usernameRl = self.username
+            self.uuid = str(uuid1())
+
         options = {
-            'username': self.username,
-            'uuid': str(uuid1()),
-            'token': ''
+            'username': self.usernameRl,
+            'uuid': self.uuid,
+            'token': token
         }
 
         call(get_minecraft_command(version=self.version_id, minecraft_directory=minecraft_directory, options=options))
@@ -82,7 +110,7 @@ class MainWindow(QMainWindow):
         self.logo = QLabel(self.centralwidget)
         self.logo.setMaximumSize(QSize(256, 127))
         self.logo.setText('')
-        self.logo.setPixmap(QPixmap('assets/title.png'))
+        self.logo.setPixmap(QPixmap(CURRENT_DIRECTORY + '/assets/title.png'))
         self.logo.setScaledContents(True)
         
         self.titlespacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
@@ -93,6 +121,14 @@ class MainWindow(QMainWindow):
         if (os.path.isfile("plr.dat")):
             f = open("plr.dat", "r")
             self.username.setText(f.read())
+
+        self.password = QLineEdit(self.centralwidget)
+        self.password.setPlaceholderText('Пароль')
+        self.password.setEchoMode(QLineEdit.Password)
+
+        if (os.path.isfile("passwd.dat")):
+            f = open("passwd.dat", "r")
+            self.password.setText(f.read())
         
         self.version_select = QComboBox(self.centralwidget)
         for version in get_version_list():
@@ -101,6 +137,14 @@ class MainWindow(QMainWindow):
         if (os.path.isfile("ver.dat")):
             f = open("ver.dat", "r")
             self.version_select.setCurrentText(f.read())
+
+        self.license = QCheckBox("Майкрософт?", self.centralwidget)
+        self.license.setCheckState(False)
+        self.license.stateChanged.connect(lambda x: self.licenseChange())
+
+        if (os.path.isfile("type.dat")):
+            f = open("type.dat", "r")
+            self.license.setCheckState(bool(f.read()))
 
         self.progress_spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
@@ -123,13 +167,22 @@ class MainWindow(QMainWindow):
         self.buttonopts = QHBoxLayout()
         self.buttonopts.addWidget(self.start_button)
         self.buttonopts.addWidget(self.game_folder)
+
+        self.checkThreadTimer = QTimer(self.centralwidget)
+        self.checkThreadTimer.setInterval(1)
+
+        self.checkThreadTimer.timeout.connect(self.timerTick)
+
+        self.checkThreadTimer.start()
         
         self.vertical_layout = QVBoxLayout(self.centralwidget)
         self.vertical_layout.setContentsMargins(15, 15, 15, 15)
         self.vertical_layout.addWidget(self.logo, 0, Qt.AlignmentFlag.AlignHCenter)
         self.vertical_layout.addItem(self.titlespacer)
         self.vertical_layout.addWidget(self.username)
+        self.vertical_layout.addWidget(self.password)
         self.vertical_layout.addWidget(self.version_select)
+        self.vertical_layout.addWidget(self.license)
         self.vertical_layout.addItem(self.progress_spacer)
         self.vertical_layout.addWidget(self.start_progress_label)
         self.vertical_layout.addWidget(self.start_progress)
@@ -141,20 +194,41 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.centralwidget)
     
+    def licenseChange(self):
+        self.username.setText("")
+
+    def timerTick(self):
+        self.password.setDisabled(not self.license.isChecked())
+        if (self.license.isChecked()):
+            self.username.setPlaceholderText("Email")
+        else:
+            self.username.setPlaceholderText("Имя пользователя")
+
     def state_update(self, value):
         self.start_button.setDisabled(value)
+        self.username.setDisabled(value)
+        self.password.setDisabled(value)
+        self.license.setDisabled(value)
+        self.version_select.setDisabled(value)
         self.start_progress_label.setVisible(value)
         self.start_progress.setVisible(value)
     def update_progress(self, progress, max_progress, label):
         self.start_progress.setValue(progress)
         self.start_progress.setMaximum(max_progress)
-        self.start_progress_label.setText(label) # Исправил проблему с созданием описания для полосы прогресса [24:01]
+        self.start_progress_label.setText(label)
     def launch_game(self):
-        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text())
+        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), self.license.isChecked())
         self.launch_thread.start()
     def game_folder_opn(self):
-        import subprocess
-        subprocess.Popen(r'explorer ' + minecraft_directory)
+        if (platform.system() == "Windows"):
+            import subprocess
+            subprocess.run(['explorer', minecraft_directory])
+        if ("Linux" in platform.system()):
+            import subprocess
+            subprocess.run(['xdg-open', minecraft_directory])
+        if (platform.system() == "Darwin"):
+            import subprocess
+            subprocess.run(['open', minecraft_directory])
         
 
 if __name__ == '__main__':
