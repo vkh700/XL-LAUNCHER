@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt, QTimer
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow, QCheckBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSpinBox, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow, QCheckBox
 from PyQt5.QtGui import QPixmap
 
 from minecraft_launcher_lib.utils import get_minecraft_directory, get_version_list
@@ -18,11 +18,13 @@ import os
 
 from mojang import Client, API
 
+import psutil
+
 minecraft_directory = ".xllauncher"
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 class LaunchThread(QThread):
-    launch_setup_signal = pyqtSignal(str, str, str, bool)
+    launch_setup_signal = pyqtSignal(str, str, str, bool, int)
     progress_update_signal = pyqtSignal(int, int, str)
     state_update_signal = pyqtSignal(bool)
 
@@ -31,6 +33,7 @@ class LaunchThread(QThread):
     usernameRl = ''
     password = ''
     uuid = ''
+    memory = 1
     license = False
 
     progress = 0
@@ -41,11 +44,12 @@ class LaunchThread(QThread):
         super().__init__()
         self.launch_setup_signal.connect(self.launch_setup)
 
-    def launch_setup(self, version_id, username, password, license):
+    def launch_setup(self, version_id, username, password, license, memory):
         self.version_id = version_id
         self.username = username
         self.password = password
         self.license = license
+        self.memory = memory
     
     def update_progress_label(self, value):
         self.progress_label = value
@@ -95,6 +99,7 @@ class LaunchThread(QThread):
             'uuid': self.uuid,
             'token': token
         }
+        options["jvmArguments"] = ["-Xmx" + str(self.memory) + "G", "-Xms" + str(self.memory) + "G"]
 
         call(get_minecraft_command(version=self.version_id, minecraft_directory=minecraft_directory, options=options))
         self.state_update_signal.emit(False)
@@ -118,10 +123,6 @@ class MainWindow(QMainWindow):
         self.username = QLineEdit(self.centralwidget)
         self.username.setPlaceholderText('Имя пользователя')
 
-        if (os.path.isfile("plr.dat")):
-            f = open("plr.dat", "r")
-            self.username.setText(f.read())
-
         self.password = QLineEdit(self.centralwidget)
         self.password.setPlaceholderText('Пароль')
         self.password.setEchoMode(QLineEdit.Password)
@@ -131,6 +132,7 @@ class MainWindow(QMainWindow):
             self.password.setText(f.read())
         
         self.version_select = QComboBox(self.centralwidget)
+        
         for version in get_version_list():
             self.version_select.addItem(version['id'])
         
@@ -141,10 +143,15 @@ class MainWindow(QMainWindow):
         self.license = QCheckBox("Майкрософт?", self.centralwidget)
         self.license.setCheckState(False)
         self.license.stateChanged.connect(lambda x: self.licenseChange())
+        self.license.setTristate(False)
 
         if (os.path.isfile("type.dat")):
             f = open("type.dat", "r")
-            self.license.setCheckState(bool(f.read()))
+            self.license.setChecked(bool(f.read()))
+
+        if (os.path.isfile("plr.dat")):
+            f = open("plr.dat", "r")
+            self.username.setText(f.read())
 
         self.progress_spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
@@ -163,6 +170,11 @@ class MainWindow(QMainWindow):
         self.game_folder = QPushButton(self.centralwidget)
         self.game_folder.setText('Папка с игрой')
         self.game_folder.clicked.connect(self.game_folder_opn)
+
+        self.sp = QSpinBox(self.centralwidget)
+        print(round(psutil.virtual_memory().total/(1024**3)))
+        self.sp.setMaximum(round(psutil.virtual_memory().total/(1024**3)))
+        self.sp.setMinimum(2)
 
         self.buttonopts = QHBoxLayout()
         self.buttonopts.addWidget(self.start_button)
@@ -183,6 +195,7 @@ class MainWindow(QMainWindow):
         self.vertical_layout.addWidget(self.password)
         self.vertical_layout.addWidget(self.version_select)
         self.vertical_layout.addWidget(self.license)
+        self.vertical_layout.addWidget(self.sp)
         self.vertical_layout.addItem(self.progress_spacer)
         self.vertical_layout.addWidget(self.start_progress_label)
         self.vertical_layout.addWidget(self.start_progress)
@@ -217,7 +230,7 @@ class MainWindow(QMainWindow):
         self.start_progress.setMaximum(max_progress)
         self.start_progress_label.setText(label)
     def launch_game(self):
-        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), self.license.isChecked())
+        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), self.license.isChecked(), self.sp.value())
         self.launch_thread.start()
     def game_folder_opn(self):
         if (platform.system() == "Windows"):
