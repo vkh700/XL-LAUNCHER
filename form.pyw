@@ -6,7 +6,6 @@ from minecraft_launcher_lib.utils import get_minecraft_directory, get_version_li
 from minecraft_launcher_lib.install import install_minecraft_version
 from minecraft_launcher_lib.command import get_minecraft_command
 
-from random_username.generate import generate_username
 from uuid import uuid1
 
 from subprocess import call
@@ -19,6 +18,8 @@ import os
 from mojang import Client, API
 
 import psutil
+
+import qdarkgraystyle
 
 minecraft_directory = ".xllauncher"
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
@@ -72,27 +73,19 @@ class LaunchThread(QThread):
         f = open("passwd.dat", "w")
         f.write(self.password)
         f.close()
-        f = open("type.dat", "w")
-        f.write(str(self.license))
+        f = open("ram.dat", "w")
+        f.write(self.memory)
         f.close()
 
         self.state_update_signal.emit(True)
 
         install_minecraft_version(versionid=self.version_id, minecraft_directory=minecraft_directory, callback={ 'setStatus': self.update_progress_label, 'setProgress': self.update_progress, 'setMax': self.update_progress_max })
-
-        if self.username == '':
-            self.username = generate_username()[0]
         
-        if (self.license==True):
-            client = Client(self.username, self.password)
-            token = client.bearer_token
-            self.usernameRl = client.get_profile().name
-            api = API()
-            self.uuid = api.get_uuid(self.usernameRl)
-        else:
-            token = ""
-            self.usernameRl = self.username
-            self.uuid = str(uuid1())
+        client = Client(self.username, self.password)
+        token = client.bearer_token
+        self.usernameRl = client.get_profile().name
+        api = API()
+        self.uuid = api.get_uuid(self.usernameRl)
 
         options = {
             'username': self.usernameRl,
@@ -117,14 +110,14 @@ class MainWindow(QMainWindow):
         self.logo.setText('')
         self.logo.setPixmap(QPixmap(CURRENT_DIRECTORY + '/assets/title.png'))
         self.logo.setScaledContents(True)
-        
+
         self.titlespacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         
         self.username = QLineEdit(self.centralwidget)
-        self.username.setPlaceholderText('Имя пользователя')
+        self.username.setPlaceholderText('Email')
 
         self.password = QLineEdit(self.centralwidget)
-        self.password.setPlaceholderText('Пароль')
+        self.password.setPlaceholderText('Password')
         self.password.setEchoMode(QLineEdit.Password)
 
         if (os.path.isfile("passwd.dat")):
@@ -139,15 +132,6 @@ class MainWindow(QMainWindow):
         if (os.path.isfile("ver.dat")):
             f = open("ver.dat", "r")
             self.version_select.setCurrentText(f.read())
-
-        self.license = QCheckBox("Майкрософт?", self.centralwidget)
-        self.license.setCheckState(False)
-        self.license.stateChanged.connect(lambda x: self.licenseChange())
-        self.license.setTristate(False)
-
-        if (os.path.isfile("type.dat")):
-            f = open("type.dat", "r")
-            self.license.setChecked(bool(f.read()))
 
         if (os.path.isfile("plr.dat")):
             f = open("plr.dat", "r")
@@ -164,11 +148,11 @@ class MainWindow(QMainWindow):
         self.start_progress.setVisible(False)
         
         self.start_button = QPushButton(self.centralwidget)
-        self.start_button.setText('ИГРАТЬ!')
+        self.start_button.setText('PLAY!')
         self.start_button.clicked.connect(self.launch_game)
 
         self.game_folder = QPushButton(self.centralwidget)
-        self.game_folder.setText('Папка с игрой')
+        self.game_folder.setText('Game Folder')
         self.game_folder.clicked.connect(self.game_folder_opn)
 
         self.sp = QSpinBox(self.centralwidget)
@@ -176,16 +160,13 @@ class MainWindow(QMainWindow):
         self.sp.setMaximum(round(psutil.virtual_memory().total/(1024**3)))
         self.sp.setMinimum(2)
 
+        if (os.path.isfile("ram.dat")):
+            f = open("ram.dat", "r")
+            self.sp.setText(f.read())
+
         self.buttonopts = QHBoxLayout()
         self.buttonopts.addWidget(self.start_button)
         self.buttonopts.addWidget(self.game_folder)
-
-        self.checkThreadTimer = QTimer(self.centralwidget)
-        self.checkThreadTimer.setInterval(1)
-
-        self.checkThreadTimer.timeout.connect(self.timerTick)
-
-        self.checkThreadTimer.start()
         
         self.vertical_layout = QVBoxLayout(self.centralwidget)
         self.vertical_layout.setContentsMargins(15, 15, 15, 15)
@@ -194,7 +175,6 @@ class MainWindow(QMainWindow):
         self.vertical_layout.addWidget(self.username)
         self.vertical_layout.addWidget(self.password)
         self.vertical_layout.addWidget(self.version_select)
-        self.vertical_layout.addWidget(self.license)
         self.vertical_layout.addWidget(self.sp)
         self.vertical_layout.addItem(self.progress_spacer)
         self.vertical_layout.addWidget(self.start_progress_label)
@@ -209,13 +189,6 @@ class MainWindow(QMainWindow):
     
     def licenseChange(self):
         self.username.setText("")
-
-    def timerTick(self):
-        self.password.setDisabled(not self.license.isChecked())
-        if (self.license.isChecked()):
-            self.username.setPlaceholderText("Email")
-        else:
-            self.username.setPlaceholderText("Имя пользователя")
 
     def state_update(self, value):
         self.start_button.setDisabled(value)
@@ -248,6 +221,7 @@ if __name__ == '__main__':
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
 
     app = QApplication(argv)
+    app.setStyleSheet(qdarkgraystyle.load_stylesheet())
     window = MainWindow()
     window.show()
 
