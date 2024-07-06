@@ -1,16 +1,13 @@
-# ИГРА МАЙНКРАФТ НЕ ЯВЛЯЕТСЯ МОЕЙ СОБСТВЕННОСТЬЮ! (XLLAUNCHER не игра но лаунчер) БЛАГОДАРНОСТЬ ВЫДЕЛЯЕТСЯ: Microsoft, Mojang
-# THE GAME MINECRAFT ISNT MINE! (XLLAUNCHER isnt a game but a launcher) THANKS TO: Microsoft, Mojang
+# Minecraft isnt our game, all the credit goes to Mojang (XLLAUNCHER is a minecraft launcher)
 
 # XL:LAUNCHER
-Лёгкий способ запуска майнкрафта
+Easy way to launch MC
 
-# Функции
-. Сохранение ника
-. Сохранение версии
-. Кнопка открыть папку
-. Вход с майкрософт
-. Поддержка скинов акк-ов лицензии
+# Functions
+. Options Autosave
+. Microsoft Accounts
+. Ram amount picker
+. Every minecraft version!
 
-# Недостатки
-. Антивирус жалуется (потому что прога на пайтоне)
-. Нельзя поставить скин (на пиратке)
+# Minuses
+. Some ativiruses flag our software as a virus. (The reason is we are using PyInstaller for builds and antiviruses flag PyInstaller)
