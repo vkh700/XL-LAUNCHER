@@ -1,4 +1,4 @@
-![XLLAUNCHER]([https://github.com/vkhainousky/XL-LAUNCHER/blob/main/assets/title.png?raw=true)
+![XLLAUNCHER](https://github.com/vkhainousky/XL-LAUNCHER/blob/main/assets/title.png?raw=true)
 # Minecraft isnt our game, all the credit goes to Mojang (XLLAUNCHER is a minecraft launcher)
 
 # XL:LAUNCHER
