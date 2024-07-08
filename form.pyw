@@ -24,8 +24,8 @@ import qdarkgraystyle
 
 import webbrowser
 
-minecraft_directory = "%appdata%/XLLauncher/.minecraft"
-CURRENT_DIRECTORY = "%appdata%/XLLauncher/"
+minecraft_directory = os.getenv('APPDATA') + "/XLLauncher/.minecraft"
+CURRENT_DIRECTORY = os.getenv('APPDATA') + "/XLLauncher/"
 CURRENT_PROG_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 class LaunchThread(QThread):
@@ -117,6 +117,8 @@ class MainWindow(QMainWindow):
         self.resize(300, 283)
         self.centralwidget = QWidget(self)
         self.setWindowTitle("XL:LAUNCHER")
+
+        os.mkdir(CURRENT_DIRECTORY)
         
         self.logo = QLabel(self.centralwidget)
         self.logo.setMaximumSize(QSize(256, 127))
