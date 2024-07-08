@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPixmap
 from minecraft_launcher_lib.utils import get_minecraft_directory, get_version_list
 from minecraft_launcher_lib.install import install_minecraft_version
 from minecraft_launcher_lib.command import get_minecraft_command
+from minecraft_launcher_lib.forge import install_forge_version, list_forge_versions, find_forge_version, forge_to_installed_version
 
 from uuid import uuid1
 
@@ -21,11 +22,13 @@ import psutil
 
 import qdarkgraystyle
 
+import webbrowser
+
 minecraft_directory = ".xllauncher"
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 class LaunchThread(QThread):
-    launch_setup_signal = pyqtSignal(str, str, str, bool, int)
+    launch_setup_signal = pyqtSignal(str, str, str, bool, int, bool)
     progress_update_signal = pyqtSignal(int, int, str)
     state_update_signal = pyqtSignal(bool)
 
@@ -36,6 +39,7 @@ class LaunchThread(QThread):
     uuid = ''
     memory = 1
     license = False
+    forge = False
 
     progress = 0
     progress_max = 0
@@ -45,12 +49,13 @@ class LaunchThread(QThread):
         super().__init__()
         self.launch_setup_signal.connect(self.launch_setup)
 
-    def launch_setup(self, version_id, username, password, license, memory):
+    def launch_setup(self, version_id, username, password, license, memory, forge):
         self.version_id = version_id
         self.username = username
         self.password = password
         self.license = license
         self.memory = memory
+        self.forge = forge
     
     def update_progress_label(self, value):
         self.progress_label = value
@@ -74,7 +79,10 @@ class LaunchThread(QThread):
         f.write(self.password)
         f.close()
         f = open("ram.dat", "w")
-        f.write(self.memory)
+        f.write(str(self.memory))
+        f.close()
+        f = open("forge.dat", "w")
+        f.write(str(self.forge))
         f.close()
 
         self.state_update_signal.emit(True)
@@ -94,7 +102,11 @@ class LaunchThread(QThread):
         }
         options["jvmArguments"] = ["-Xmx" + str(self.memory) + "G", "-Xms" + str(self.memory) + "G"]
 
-        call(get_minecraft_command(version=self.version_id, minecraft_directory=minecraft_directory, options=options))
+        if (self.forge):
+            install_forge_version(find_forge_version(self.version_id),minecraft_directory,callback={ 'setStatus': self.update_progress_label, 'setProgress': self.update_progress, 'setMax': self.update_progress_max })
+            call(get_minecraft_command(version="forge " + find_forge_version(self.version_id), minecraft_directory=minecraft_directory, options=options))
+        else:   
+            call(get_minecraft_command(version=self.version_id, minecraft_directory=minecraft_directory, options=options))
         self.state_update_signal.emit(False)
 
 class MainWindow(QMainWindow):
@@ -148,25 +160,49 @@ class MainWindow(QMainWindow):
         self.start_progress.setVisible(False)
         
         self.start_button = QPushButton(self.centralwidget)
-        self.start_button.setText('PLAY!')
+        self.start_button.setText('Играть!')
         self.start_button.clicked.connect(self.launch_game)
 
         self.game_folder = QPushButton(self.centralwidget)
-        self.game_folder.setText('Game Folder')
+        self.game_folder.setText('Папка с игрой')
         self.game_folder.clicked.connect(self.game_folder_opn)
+
+        self.options = QPushButton(self.centralwidget)
+        self.options.setText('Настройки')
+        self.options.clicked.connect(self.options_opn)
 
         self.sp = QSpinBox(self.centralwidget)
         print(round(psutil.virtual_memory().total/(1024**3)))
         self.sp.setMaximum(round(psutil.virtual_memory().total/(1024**3)))
         self.sp.setMinimum(2)
 
+        self.sp.setVisible(False)
+
         if (os.path.isfile("ram.dat")):
             f = open("ram.dat", "r")
-            self.sp.setText(f.read())
+            self.sp.setValue(int(f.read()))
 
         self.buttonopts = QHBoxLayout()
         self.buttonopts.addWidget(self.start_button)
         self.buttonopts.addWidget(self.game_folder)
+        self.buttonopts.addWidget(self.options)
+
+        self.forge = QCheckBox("Forge?",self.centralwidget)
+        self.forge.setTristate(False)
+
+        if (os.path.isfile("forge.dat")):
+            f = open("forge.dat", "r")
+            self.forge.setChecked(bool(f.read()))
+
+        self.optifine = QPushButton("Скачать Optifine",self.centralwidget)
+        self.optifine.clicked.connect(self.download_opt)
+
+        self.forge.setVisible(False)
+        self.optifine.setVisible(False)
+
+        self.veropts = QHBoxLayout()
+        self.veropts.addWidget(self.forge)
+        self.veropts.addWidget(self.optifine)
         
         self.vertical_layout = QVBoxLayout(self.centralwidget)
         self.vertical_layout.setContentsMargins(15, 15, 15, 15)
@@ -179,6 +215,7 @@ class MainWindow(QMainWindow):
         self.vertical_layout.addItem(self.progress_spacer)
         self.vertical_layout.addWidget(self.start_progress_label)
         self.vertical_layout.addWidget(self.start_progress)
+        self.vertical_layout.addItem(self.veropts)
         self.vertical_layout.addItem(self.buttonopts)
 
         self.launch_thread = LaunchThread()
@@ -194,8 +231,9 @@ class MainWindow(QMainWindow):
         self.start_button.setDisabled(value)
         self.username.setDisabled(value)
         self.password.setDisabled(value)
-        self.license.setDisabled(value)
         self.version_select.setDisabled(value)
+        self.sp.setDisabled(value)
+        self.forge.setDisabled(value)
         self.start_progress_label.setVisible(value)
         self.start_progress.setVisible(value)
     def update_progress(self, progress, max_progress, label):
@@ -203,7 +241,7 @@ class MainWindow(QMainWindow):
         self.start_progress.setMaximum(max_progress)
         self.start_progress_label.setText(label)
     def launch_game(self):
-        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), self.license.isChecked(), self.sp.value())
+        self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), True, self.sp.value(), self.forge.isChecked())
         self.launch_thread.start()
     def game_folder_opn(self):
         if (platform.system() == "Windows"):
@@ -215,6 +253,21 @@ class MainWindow(QMainWindow):
         if (platform.system() == "Darwin"):
             import subprocess
             subprocess.run(['open', minecraft_directory])
+    def options_opn(self):
+        if (self.sp.isVisible()):
+            self.sp.setVisible(False)
+        else:
+            self.sp.setVisible(True)
+        if (self.forge.isVisible()):
+            self.forge.setVisible(False)
+        else:
+            self.forge.setVisible(True)
+        if (self.optifine.isVisible()):
+            self.optifine.setVisible(False)
+        else:
+            self.optifine.setVisible(True)
+    def download_opt(self):
+        webbrowser.open_new_tab("https://optifine.net/downloads")
         
 
 if __name__ == '__main__':

@@ -1,14 +1,14 @@
-![XLLauncher](https://raw.githubusercontent.com/vkhainousky/XL-LAUNCHER/main/assets/title.png?raw=true)
 # Minecraft isnt our game, all the credit goes to Mojang (XLLAUNCHER is a minecraft launcher)
 
 # XL:LAUNCHER
-Easy way to launch MC
+Лёгкий способ запуска майнкрафта
 
-# Functions
-. Options Autosave
-. Microsoft Accounts
-. Ram amount picker
-. Every minecraft version!
+# Функции
+. Автосохранение опций
+. Аккаунты майкрософт
+. Выбор оперативной памяти
+. Любая версия майнкрафта
+. Forge
 
-# Minuses
-. Some ativiruses flag our software as a virus. (The reason is we are using PyInstaller for builds and antiviruses flag PyInstaller)
+# Минусы
+. Нету. Пишите нам на почту если у вас появились баги. (twer@twer.pw)
