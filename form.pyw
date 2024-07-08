@@ -118,7 +118,8 @@ class MainWindow(QMainWindow):
         self.centralwidget = QWidget(self)
         self.setWindowTitle("XL:LAUNCHER")
 
-        os.mkdir(CURRENT_DIRECTORY)
+        if (os.path.exists(CURRENT_DIRECTORY) == False):
+            os.mkdir(CURRENT_DIRECTORY)
         
         self.logo = QLabel(self.centralwidget)
         self.logo.setMaximumSize(QSize(256, 127))
