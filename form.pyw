@@ -24,8 +24,9 @@ import qdarkgraystyle
 
 import webbrowser
 
-minecraft_directory = ".xllauncher"
-CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+minecraft_directory = "%appdata%/XLLauncher/.minecraft"
+CURRENT_DIRECTORY = "%appdata%/XLLauncher/"
+CURRENT_PROG_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 class LaunchThread(QThread):
     launch_setup_signal = pyqtSignal(str, str, str, bool, int, bool)
@@ -120,7 +121,7 @@ class MainWindow(QMainWindow):
         self.logo = QLabel(self.centralwidget)
         self.logo.setMaximumSize(QSize(256, 127))
         self.logo.setText('')
-        self.logo.setPixmap(QPixmap(CURRENT_DIRECTORY + '/assets/title.png'))
+        self.logo.setPixmap(QPixmap(CURRENT_PROG_DIRECTORY + '/assets/title.png'))
         self.logo.setScaledContents(True)
 
         self.titlespacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
