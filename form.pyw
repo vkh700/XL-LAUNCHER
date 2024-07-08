@@ -69,19 +69,19 @@ class LaunchThread(QThread):
 
     def run(self):
 
-        f = open("plr.dat", "w")
+        f = open(CURRENT_DIRECTORY + "/plr.dat", "w")
         f.write(self.username)
         f.close()
-        f = open("ver.dat", "w")
+        f = open(CURRENT_DIRECTORY + "/ver.dat", "w")
         f.write(self.version_id)
         f.close()
-        f = open("passwd.dat", "w")
+        f = open(CURRENT_DIRECTORY + "/passwd.dat", "w")
         f.write(self.password)
         f.close()
-        f = open("ram.dat", "w")
+        f = open(CURRENT_DIRECTORY + "/ram.dat", "w")
         f.write(str(self.memory))
         f.close()
-        f = open("forge.dat", "w")
+        f = open(CURRENT_DIRECTORY + "/forge.dat", "w")
         f.write(str(self.forge))
         f.close()
 
@@ -132,8 +132,8 @@ class MainWindow(QMainWindow):
         self.password.setPlaceholderText('Password')
         self.password.setEchoMode(QLineEdit.Password)
 
-        if (os.path.isfile("passwd.dat")):
-            f = open("passwd.dat", "r")
+        if (os.path.isfile(CURRENT_DIRECTORY + "/passwd.dat")):
+            f = open(CURRENT_DIRECTORY + "/passwd.dat", "r")
             self.password.setText(f.read())
         
         self.version_select = QComboBox(self.centralwidget)
@@ -141,12 +141,12 @@ class MainWindow(QMainWindow):
         for version in get_version_list():
             self.version_select.addItem(version['id'])
         
-        if (os.path.isfile("ver.dat")):
-            f = open("ver.dat", "r")
+        if (os.path.isfile(CURRENT_DIRECTORY + "/ver.dat")):
+            f = open(CURRENT_DIRECTORY + "/ver.dat", "r")
             self.version_select.setCurrentText(f.read())
 
-        if (os.path.isfile("plr.dat")):
-            f = open("plr.dat", "r")
+        if (os.path.isfile(CURRENT_DIRECTORY + "/plr.dat")):
+            f = open(CURRENT_DIRECTORY + "/plr.dat", "r")
             self.username.setText(f.read())
 
         self.progress_spacer = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -178,8 +178,8 @@ class MainWindow(QMainWindow):
 
         self.sp.setVisible(False)
 
-        if (os.path.isfile("ram.dat")):
-            f = open("ram.dat", "r")
+        if (os.path.isfile(CURRENT_DIRECTORY + "/ram.dat")):
+            f = open(CURRENT_DIRECTORY + "/ram.dat", "r")
             self.sp.setValue(int(f.read()))
 
         self.buttonopts = QHBoxLayout()
@@ -190,8 +190,8 @@ class MainWindow(QMainWindow):
         self.forge = QCheckBox("Forge?",self.centralwidget)
         self.forge.setTristate(False)
 
-        if (os.path.isfile("forge.dat")):
-            f = open("forge.dat", "r")
+        if (os.path.isfile(CURRENT_DIRECTORY + "/forge.dat")):
+            f = open(CURRENT_DIRECTORY + "/forge.dat", "r")
             self.forge.setChecked(bool(f.read()))
 
         self.optifine = QPushButton("Скачать Optifine",self.centralwidget)
