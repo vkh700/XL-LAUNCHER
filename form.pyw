@@ -7,8 +7,6 @@ from minecraft_launcher_lib.install import install_minecraft_version
 from minecraft_launcher_lib.command import get_minecraft_command
 from minecraft_launcher_lib.forge import install_forge_version, list_forge_versions, find_forge_version, forge_to_installed_version
 
-from uuid import uuid1
-
 from subprocess import call
 from sys import argv, exit
 
