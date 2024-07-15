@@ -46,6 +46,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "C:\Users\vlad\Desktop\XL-LAUNCHER-main\dist\XLLauncher\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\vlad\Desktop\XL-LAUNCHER-main\dist\XLLauncher\_internal\*"; DestDir: "{app}\_internal\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\vlad\Desktop\XL-LAUNCHER-main\assets\*"; DestDir: "{app}\_internal\assets\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
