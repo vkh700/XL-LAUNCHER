@@ -107,7 +107,7 @@ class LaunchThread(QThread):
 
             if (self.forge):
                 install_forge_version(find_forge_version(self.version_id),minecraft_directory,callback={ 'setStatus': self.update_progress_label, 'setProgress': self.update_progress, 'setMax': self.update_progress_max })
-                call(get_minecraft_command(version="forge " + find_forge_version(self.version_id), minecraft_directory=minecraft_directory, options=options))
+                call(get_minecraft_command(version=forge_to_installed_version(find_forge_version(self.version_id)), minecraft_directory=minecraft_directory, options=options))
             else:   
                 call(get_minecraft_command(version=self.version_id, minecraft_directory=minecraft_directory, options=options))
             self.state_update_signal.emit(False)
