@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "XLLauncher"
-#define MyAppVersion "2.0"
+#define MyAppVersion "3.2"
 #define MyAppPublisher "TWER"
 #define MyAppURL "https://twer.pw"
 #define MyAppExeName "XLLauncher.exe"
