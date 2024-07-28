@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QSize, Qt
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSpinBox, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow, QCheckBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSpinBox, QLabel, QLineEdit, QComboBox, QSpacerItem, QSizePolicy, QProgressBar, QPushButton, QApplication, QMainWindow, QCheckBox, QSlider
 from PyQt5.QtGui import QPixmap
+import pyqt5_fugueicons as fugue
 
 from minecraft_launcher_lib.utils import get_minecraft_directory, get_version_list
 from minecraft_launcher_lib.install import install_minecraft_version
@@ -123,7 +124,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setFixedSize(380, 200)
+        self.setFixedSize(400, 400)
         self.centralwidget = QWidget(self)
         self.setWindowTitle("XL:LAUNCHER")
 
@@ -136,22 +137,23 @@ class MainWindow(QMainWindow):
         self.logo.setText('')
         self.logo.setPixmap(QPixmap(CURRENT_PROG_DIRECTORY + '/assets/title.png'))
         self.logo.setScaledContents(True)
+        self.logo.move(120,0)
 
         self.titlespacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         
         self.loginTitle = QLabel(self.centralwidget)
         self.loginTitle.setText('Войти в аккаунт (Майкр.):')
-        self.loginTitle.move(230,10)
+        self.loginTitle.move(165,90)
 
         self.username = QLineEdit(self.centralwidget)
         self.username.setPlaceholderText('Email')
-        self.username.move(230,30)
+        self.username.move(170,130)
         self.username.resize(QSize(130,30))
 
         self.password = QLineEdit(self.centralwidget)
         self.password.setPlaceholderText('Password')
         self.password.setEchoMode(QLineEdit.Password)
-        self.password.move(230,60)
+        self.password.move(170,160)
         self.password.resize(QSize(130,30))
 
         if (os.path.isfile(CURRENT_DIRECTORY + "/passwd.dat")):
@@ -159,7 +161,7 @@ class MainWindow(QMainWindow):
             self.password.setText(f.read())
         
         self.version_select = QComboBox(self.centralwidget)
-        self.version_select.move(0,170)
+        self.version_select.move(210,190)
         self.version_select.resize(QSize(70,30))
         
         for version in get_version_list():
@@ -190,28 +192,41 @@ class MainWindow(QMainWindow):
         self.start_button = QPushButton(self.centralwidget)
         self.start_button.setText('Играть!')
         self.start_button.clicked.connect(self.launch_game)
-        self.start_button.move(310,170)
+        self.start_button.move(200,220)
         self.start_button.resize(QSize(70,30))
         self.start_button.setStyleSheet("background-color: #ffa500; color : white;")
 
-        self.game_folder = QPushButton(self.centralwidget)
-        self.game_folder.setText('Папка с игрой')
+        self.game_folder = QPushButton(fugue.icon('folder'),"",self.centralwidget)
         self.game_folder.clicked.connect(self.game_folder_opn)
-        self.game_folder.move(90,170)
-        self.game_folder.resize(QSize(90,30))
+        self.game_folder.move(170,190)
+        self.game_folder.resize(QSize(30,30))
 
         self.options = QPushButton(self.centralwidget)
         self.options.setText('Настройки')
         self.options.clicked.connect(self.options_opn)
-        self.options.move(180,170)
+        self.options.move(0,200)
         self.options.resize(QSize(90,30))
+        self.options.setStyleSheet("background : rgba(0, 0, 0, 100); color:white; border-radius: 4px;") 
 
-        self.sp = QSpinBox(self.centralwidget)
+        self.main = QPushButton(self.centralwidget)
+        self.main.setText('Главная')
+        self.main.clicked.connect(self.main_opn)
+        self.main.move(0,170)
+        self.main.resize(QSize(90,30))
+        self.main.setStyleSheet("background : rgba(0, 0, 0, 100); color:white; border-radius: 4px;") 
+
+        self.sp = QSlider(self.centralwidget)
         print(round(psutil.virtual_memory().total/(1024**3)))
         self.sp.setMaximum(round(psutil.virtual_memory().total/(1024**3)))
         self.sp.setMinimum(2)
-        self.sp.move(180,100)
-        self.sp.resize(QSize(90,30))
+        self.sp.setOrientation(Qt.Orientation.Horizontal)
+        self.sp.move(170,120)
+        self.sp.resize(QSize(150,30))
+        self.sliderLabel = QLabel(self.centralwidget)
+        self.sliderLabel.move(165,120)
+        self.sliderLabel.setVisible(False)
+        self.sliderLabel.resize(QSize(30,30))
+        self.sp.valueChanged.connect(self.sliderLabel.setNum)
 
         self.sp.setVisible(False)
 
@@ -221,7 +236,7 @@ class MainWindow(QMainWindow):
 
         self.forge = QCheckBox("Forge?",self.centralwidget)
         self.forge.setTristate(False)
-        self.forge.move(180,130)
+        self.forge.move(165,160)
 
         if (os.path.isfile(CURRENT_DIRECTORY + "/forge.dat")):
             f = open(CURRENT_DIRECTORY + "/forge.dat", "r")
@@ -229,7 +244,7 @@ class MainWindow(QMainWindow):
 
         self.optifine = QPushButton("Скачать Optifine",self.centralwidget)
         self.optifine.clicked.connect(self.download_opt)
-        self.optifine.move(180,150)
+        self.optifine.move(165,180)
         self.optifine.resize(110,21)
 
         self.forge.setVisible(False)
@@ -261,20 +276,32 @@ class MainWindow(QMainWindow):
         self.launch_thread.launch_setup_signal.emit(self.version_select.currentText(), self.username.text(), self.password.text(), True, self.sp.value(), self.forge.isChecked())
         self.launch_thread.start()
     def game_folder_opn(self):
-        subprocess.run(['explorer', minecraft_directory])
+        os.startfile(minecraft_directory)
     def options_opn(self):
-        if (self.sp.isVisible()):
-            self.sp.setVisible(False)
-        else:
-            self.sp.setVisible(True)
-        if (self.forge.isVisible()):
-            self.forge.setVisible(False)
-        else:
-            self.forge.setVisible(True)
-        if (self.optifine.isVisible()):
-            self.optifine.setVisible(False)
-        else:
-            self.optifine.setVisible(True)
+        self.sp.setVisible(True)
+        self.sliderLabel.setVisible(True)
+        self.forge.setVisible(True)
+        self.optifine.setVisible(True)
+        self.version_select.setVisible(False)
+        self.game_folder.setVisible(False)
+        self.start_button.setVisible(False)
+        self.loginTitle.setVisible(False)
+        self.username.setVisible(False)
+        self.password.setVisible(False)
+    def main_opn(self):
+        self.sp.setVisible(False)
+        self.sliderLabel.setVisible(False)
+        self.forge.setVisible(False)
+        self.optifine.setVisible(False)
+        self.version_select.setVisible(True)
+        self.game_folder.setVisible(True)
+        self.start_button.setVisible(True)
+        self.loginTitle.setVisible(True)
+        self.username.setVisible(True)
+        self.password.setVisible(True)
+        
+        
+           
     def download_opt(self):
         webbrowser.open_new_tab("https://optifine.net/downloads")
         
